@@ -43,7 +43,7 @@ class Ssh:
             client.get_transport().set_keepalive(60)
             func(client)
         except Exception, e:
-            print self, "unexpected", e
+            logger.exception("Failed to ssh")
         finally:
             client.close()
 
@@ -86,10 +86,13 @@ class Owners:
                     for line in stderr:
                         logger.debug(line)
                 except Exception, e:
-                    print self, "unexpected", e
+                    logger.exception("Failed to add reviewer %s for change id %s" % (reviewer, change_id))
         ssh = Ssh(self.config)
         ssh.execute(add_reviewers)
 
+    def __process_output(self, line):
+        logger.info(line)
+    
     def owners(self, ref, hash, change_id):
         owners = set()
         self.git.fetch(self.config.get(GIT_REPO, "url"), ref)
@@ -109,7 +112,7 @@ class GerritEventMonitorThread(threading.Thread):
     def run(self):
         while True:
             self.run_internal()
-            print self, "sleeping and wrapping around"
+            logger.info("Sleeping and wrapping around")
             time.sleep(5)
 
     def run_internal(self):
@@ -138,6 +141,6 @@ gerrit.start()
 
 while True:
     try:
-        line = sys.stdin.readline()
+        time.sleep(30)
     except KeyboardInterrupt:
         break
